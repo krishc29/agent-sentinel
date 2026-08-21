@@ -16,7 +16,10 @@ from typing import Any, Dict
 from detector import rules
 
 # The rules that make up Layer 1 for the slice.
-LAYER1_RULES = [rules.untrusted_read_then_external_send]
+LAYER1_RULES = [
+    rules.untrusted_read_then_external_send,
+    rules.untrusted_read_then_destructive_delete,
+]
 
 
 def judge(action_log: Dict[str, Any]) -> Dict[str, Any]:

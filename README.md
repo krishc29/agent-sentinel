@@ -14,9 +14,11 @@ system catch it — and how well?*
 
 ## Current status
 
-**Vertical slice — one scenario, one rule, end-to-end.** The full pipeline runs for a single
-attack scenario (`S03_exfil_via_doc`) through a single Layer-1 detection rule. Later phases add
-more rules, scoring/anomaly layers, aggregate metrics, a Streamlit dashboard, and a real-LLM agent.
+**9 scenarios (5 attack, 4 benign), 2 Layer-1 rules, aggregate eval — end-to-end.** The agent
+executes scenarios generically (see `docs/SCHEMA.md` section 2), not just the one it was
+originally written for. Current batch result: precision 1.0, recall 1.0, false-positive rate 0.0
+across the set (`python run_eval.py`). Still ahead: Layer 2 risk scoring, Layer 3 anomaly
+detection, a Streamlit dashboard, and a real-LLM (Ollama) agent.
 
 ## How to run
 
@@ -33,6 +35,17 @@ This runs the agent on `scenarios/S03_exfil_via_doc.json` and prints three thing
 
 Uses only the Python standard library (3.11+). The run is fully deterministic: the same scenario
 in always produces an identical action log out.
+
+## Batch evaluation
+
+```
+python run_eval.py
+```
+
+Runs every scenario in `scenarios/` through the same agent -> detector -> eval pipeline and
+prints a per-scenario table plus aggregate precision / recall / false-positive rate / accuracy
+across the set. A copy of the report is written to `results/eval_report.json` (generated output,
+not committed — see `.gitignore`).
 
 ## Key concept
 
