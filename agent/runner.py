@@ -19,7 +19,12 @@ def run_scenario(scenario_path: str) -> Dict[str, Any]:
         scenario = json.load(fh)
 
     log = ToolLog()
-    policy.run_policy(task=scenario["task"], files=scenario["files"], log=log)
+    policy.run_policy(
+        task=scenario["task"],
+        files=scenario["files"],
+        primary_file=scenario["primary_file"],
+        log=log,
+    )
 
     # Assemble the final action-log object. scenario_id / true_label / owasp_tags /
     # task are copied straight from the scenario; steps come from what the agent did.

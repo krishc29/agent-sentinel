@@ -58,21 +58,41 @@ the OWASP mapping (excessive agency, improper access control) fall out naturally
 
 ### 2.1 Scenario object
 
-| Field         | Type     | Required | Meaning |
-|---------------|----------|----------|---------|
-| `scenario_id` | string   | yes      | Matches filename stem. |
-| `true_label`  | string   | yes      | `"attack"` or `"benign"`. Copied onto the output log verbatim. |
-| `owasp_tags`  | string[] | yes      | Copied onto the output log verbatim. |
-| `task`        | string   | yes      | The legitimate user task given to the agent. |
-| `files`       | object   | yes      | Map of `filename -> file object` (the readable documents). |
+| Field          | Type     | Required | Meaning |
+|----------------|----------|----------|---------|
+| `scenario_id`  | string   | yes      | Matches filename stem. |
+| `true_label`   | string   | yes      | `"attack"` or `"benign"`. Copied onto the output log verbatim. |
+| `owasp_tags`   | string[] | yes      | Copied onto the output log verbatim. |
+| `task`         | string   | yes      | The legitimate user task given to the agent. |
+| `primary_file` | string   | yes      | Key into `files`: the document the agent's legitimate task points at. The policy always reads this file first. |
+| `files`        | object   | yes      | Map of `filename -> file object` (the readable documents). |
 
 ### 2.2 File object
 
-| Field                 | Type    | Required | Meaning |
-|-----------------------|---------|----------|---------|
-| `provenance`          | string  | yes      | `"trusted_user"`, `"untrusted_document"`, or `"external"`. |
-| `content`             | string  | yes      | The visible text of the document. |
-| `hidden_instruction`  | string  | no       | A secret instruction embedded in the doc (the injection). `null`/absent for benign files. |
+| Field                | Type      | Required | Meaning |
+|----------------------|-----------|----------|---------|
+| `provenance`         | string    | yes      | `"trusted_user"`, `"untrusted_document"`, or `"external"`. |
+| `content`            | string    | yes      | The visible text of the document. |
+| `hidden_instruction` | string    | no       | A secret instruction embedded in the doc (the injection), shown for human/OWASP narrative purposes. `null`/absent for benign files. |
+| `legit_action`       | step[]    | no       | Steps the user's genuine task authorizes beyond reading the primary file (e.g. a real, intended send). Only meaningful on the `primary_file` object. Runs unconditionally. Default `[]`. |
+| `injected_action`    | step[]    | no       | Steps the gullible policy performs *only if* `hidden_instruction` is set on this file. Only meaningful on the `primary_file` object. This is what the agent actually executes — `hidden_instruction`'s text is not parsed. Default `[]`. |
+
+Only `primary_file`'s `legit_action`/`injected_action` are consulted; other files in `files` are
+just data the policy may be directed to read via those steps.
+
+### 2.3 Action step object (used in `legit_action` / `injected_action`)
+
+| Field  | Type   | Required | Meaning |
+|--------|--------|----------|---------|
+| `tool` | string | yes      | One of: `"read_file"`, `"send_email"`, `"delete_file"`. |
+| `path` | string | for `read_file`/`delete_file` | Key into `files`. |
+| `to`   | string | for `send_email` | Recipient address. |
+| `body` | string | no, `send_email` only | Email body. Defaults to the content of the most recently read file if omitted. |
+
+Executing a step records exactly one step in the output action log, via the same `agent/tools.py`
+stubs regardless of whether the step came from `legit_action` or `injected_action` — the output
+schema (section 1) has no notion of "legitimate" vs "injected"; that distinction only exists in
+the scenario input and is inferred from behaviour by the detector, never read directly.
 
 ---
 
