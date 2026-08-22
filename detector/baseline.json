@@ -1,0 +1,18 @@
+{
+  "delete_count": {
+    "mean": 0,
+    "stdev": 0.0
+  },
+  "external_send_count": {
+    "mean": 0.225,
+    "stdev": 0.41758232721225164
+  },
+  "step_count": {
+    "mean": 2.5,
+    "stdev": 0.9874208829065749
+  },
+  "untrusted_read_count": {
+    "mean": 0.9625,
+    "stdev": 0.7490619133289317
+  }
+}

@@ -14,11 +14,11 @@ system catch it — and how well?*
 
 ## Current status
 
-**9 scenarios (5 attack, 4 benign), 2 Layer-1 rules, aggregate eval — end-to-end.** The agent
-executes scenarios generically (see `docs/SCHEMA.md` section 2), not just the one it was
-originally written for. Current batch result: precision 1.0, recall 1.0, false-positive rate 0.0
-across the set (`python run_eval.py`). Still ahead: Layer 2 risk scoring, Layer 3 anomaly
-detection, a Streamlit dashboard, and a real-LLM (Ollama) agent.
+**9 scenarios (5 attack, 4 benign), 2 Layer-1 rules, Layer 2 scoring, Layer 3 anomaly detection
+(experimental), aggregate eval — end-to-end.** The agent executes scenarios generically (see
+`docs/SCHEMA.md` section 2), not just the one it was originally written for. Current batch result:
+precision 1.0, recall 1.0, false-positive rate 0.0 across the set (`python run_eval.py`). Still
+ahead: wiring Layer 3 into the main verdict, a Streamlit dashboard, and a real-LLM (Ollama) agent.
 
 ## How to run
 
@@ -46,6 +46,24 @@ Runs every scenario in `scenarios/` through the same agent -> detector -> eval p
 prints a per-scenario table plus aggregate precision / recall / false-positive rate / accuracy
 across the set. A copy of the report is written to `results/eval_report.json` (generated output,
 not committed — see `.gitignore`).
+
+## Layer 3 (experimental — not yet wired into the verdict)
+
+```
+python build_baseline.py
+```
+
+`detector/anomaly.py` flags an action log as anomalous by comparing its feature vector
+(`detector/features.py`) against a statistical baseline built from 80 deterministic synthetic
+benign scenarios (`eval/synth_benign.py`) — per-feature mean/stdev, z-score flagging. The baseline
+is committed at `detector/baseline.json` (regenerate it with the command above; same seed always
+reproduces it exactly).
+
+It is **not** wired into `detector/engine.py`/the main verdict yet — it's validated standalone.
+Real finding from validating it against the hand-labelled scenarios: it catches the malicious
+delete scenario, but misses the 4 exfiltration scenarios, because its feature vector is pure
+counts with no notion of step order — see [`docs/LAYER3_NOTES.md`](docs/LAYER3_NOTES.md) for the
+full write-up (including the exact z-scores) and the rest of this build's engineering log.
 
 ## Key concept
 
