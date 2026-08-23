@@ -1,2 +1,7 @@
-# Slice uses only the Python standard library.
-# Later phases will add: pandas, scikit-learn, streamlit
+# The core system (agent/, detector/, eval/, tests/) uses only the Python
+# standard library - nothing here is required to run run.py, run_eval.py,
+# build_baseline.py, or the test suite.
+#
+# These two are required only for dashboard/app.py:
+streamlit>=1.60
+pandas>=2.0

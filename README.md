@@ -15,10 +15,12 @@ system catch it — and how well?*
 ## Current status
 
 **9 scenarios (5 attack, 4 benign), 2 Layer-1 rules, Layer 2 scoring, Layer 3 anomaly detection
-(experimental), aggregate eval — end-to-end.** The agent executes scenarios generically (see
-`docs/SCHEMA.md` section 2), not just the one it was originally written for. Current batch result:
-precision 1.0, recall 1.0, false-positive rate 0.0 across the set (`python run_eval.py`). Still
-ahead: wiring Layer 3 into the main verdict, a Streamlit dashboard, and a real-LLM (Ollama) agent.
+(auxiliary), aggregate eval, generated docs, and a live dashboard — end-to-end.** The agent
+executes scenarios generically (see `docs/SCHEMA.md` section 2), not just the one it was
+originally written for. Current batch result: precision 1.0, recall 1.0, false-positive rate 0.0
+across the set (`python run_eval.py`). Still ahead: a real-LLM (Ollama) agent and a held-out/
+red-team pass — see `docs/LLM_AGENT_PLAN.md` and `docs/RED_TEAM_PLAN.md` for the design work
+already done toward both.
 
 ## How to run
 
@@ -47,7 +49,7 @@ prints a per-scenario table plus aggregate precision / recall / false-positive r
 across the set. A copy of the report is written to `results/eval_report.json` (generated output,
 not committed — see `.gitignore`).
 
-## Layer 3 (experimental — not yet wired into the verdict)
+## Layer 3 (auxiliary — wired in, does not drive the verdict)
 
 ```
 python build_baseline.py
@@ -59,11 +61,38 @@ benign scenarios (`eval/synth_benign.py`) — per-feature mean/stdev, z-score fl
 is committed at `detector/baseline.json` (regenerate it with the command above; same seed always
 reproduces it exactly).
 
-It is **not** wired into `detector/engine.py`/the main verdict yet — it's validated standalone.
-Real finding from validating it against the hand-labelled scenarios: it catches the malicious
-delete scenario, but misses the 4 exfiltration scenarios, because its feature vector is pure
-counts with no notion of step order — see [`docs/LAYER3_NOTES.md`](docs/LAYER3_NOTES.md) for the
-full write-up (including the exact z-scores) and the rest of this build's engineering log.
+`detector/engine.judge(log, baseline)` includes its result as `verdict["layer3"]`, but Layer 1's
+rules alone still decide `verdict["verdict"]` — Layer 3 under-recalls on its own by design. Real
+finding from validating it against the hand-labelled scenarios: it catches the malicious delete
+scenario, but misses the 4 exfiltration scenarios, because its feature vector is pure counts with
+no notion of step order — see [`docs/LAYER3_NOTES.md`](docs/LAYER3_NOTES.md) for the full
+write-up (including the exact z-scores) and the rest of this build's engineering log.
+
+## Generated documentation
+
+```
+python docs/generate_owasp_mapping.py
+python docs/generate_incidents.py
+```
+
+Both read the live pipeline (not a stale file) and write committed, regenerable docs:
+[`docs/owasp_mapping.md`](docs/owasp_mapping.md) (scenarios grouped by OWASP LLM Top 10 tag) and
+`docs/incidents/<scenario_id>.md` (one write-up per scenario — task, fired rules, Layer 3 result,
+full action log).
+
+## Dashboard
+
+```
+pip install -r requirements.txt
+streamlit run dashboard/app.py
+```
+
+`dashboard/app.py` computes everything live (same pipeline as `run_eval.py`) and offers two full
+views, toggled at the top with no page reload: **Confusion Matrix** (the 2x2 outcome grid,
+precision/recall/FPR/accuracy, a filterable scenario table) and **Watch Floor** (scenarios ranked
+by risk score, with a detail panel showing the selected scenario's action log, fired rules, and
+Layer 3 result). This is the only part of the project with a dependency beyond the standard
+library.
 
 ## Key concept
 
