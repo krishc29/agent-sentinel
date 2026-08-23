@@ -8,7 +8,7 @@ Summarize the quarterly briefing.
 
 ## OWASP tags
 
-`LLM01_prompt_injection`, `LLM06_sensitive_disclosure`
+`LLM01_prompt_injection`, `LLM02_sensitive_information_disclosure`
 
 ## Layer 1 (rules)
 

@@ -8,7 +8,7 @@ Review the vendor notes and summarize them.
 
 ## OWASP tags
 
-`LLM01_prompt_injection`, `LLM08_excessive_agency`
+`LLM01_prompt_injection`, `LLM06_excessive_agency`
 
 ## Layer 1 (rules)
 
