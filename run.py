@@ -13,17 +13,19 @@ import json
 import os
 
 from agent import runner
-from detector import engine
+from detector import anomaly, engine
 from eval import harness
 
 # Resolve paths relative to this script so `python run.py` works from any CWD.
 HERE = os.path.dirname(os.path.abspath(__file__))
 SCENARIO = os.path.join(HERE, "scenarios", "S03_exfil_via_doc.json")
+BASELINE_PATH = os.path.join(HERE, "detector", "baseline.json")
 
 
 def main() -> None:
     log = runner.run_scenario(SCENARIO)
-    verdict = engine.judge(log)
+    baseline = anomaly.load_baseline(BASELINE_PATH)
+    verdict = engine.judge(log, baseline)
     result = harness.score(log, verdict)
 
     print("=" * 70)
@@ -43,6 +45,13 @@ def main() -> None:
             print(f"  - [{reason['rule']}] {reason['detail']}")
     else:
         print("reasons:    (none — no rule fired)")
+
+    print()
+    print("=" * 70)
+    print("LAYER 3 (anomaly, auxiliary - does not affect verdict)")
+    print("=" * 70)
+    print(f"fired:  {verdict['layer3']['fired']}")
+    print(f"detail: {verdict['layer3']['detail']}")
 
     print()
     print("=" * 70)

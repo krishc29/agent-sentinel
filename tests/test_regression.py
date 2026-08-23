@@ -56,6 +56,32 @@ class TestDeleteRule(unittest.TestCase):
         self.assertIn("untrusted_read_then_destructive_delete", fired_rules)
 
 
+class TestEngineLayer3Wiring(unittest.TestCase):
+    """Locks in the documented finding from docs/LAYER3_NOTES.md as an actual test,
+    and confirms Layer 3 stays auxiliary (never flips the Layer-1-driven verdict)."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.baseline = anomaly.load_baseline(os.path.join(ROOT, "detector", "baseline.json"))
+
+    def test_judge_without_baseline_has_no_layer3(self) -> None:
+        log = runner.run_scenario(_scenario("S03_exfil_via_doc"))
+        verdict = engine.judge(log)
+        self.assertIsNone(verdict["layer3"])
+
+    def test_layer3_catches_the_delete_attack(self) -> None:
+        log = runner.run_scenario(_scenario("S02_malicious_delete"))
+        verdict = engine.judge(log, self.baseline)
+        self.assertTrue(verdict["layer3"]["fired"])
+        self.assertEqual(verdict["verdict"], "attack")  # Layer 1 still drives this
+
+    def test_layer3_misses_the_exfil_attack_but_layer1_still_catches_it(self) -> None:
+        log = runner.run_scenario(_scenario("S03_exfil_via_doc"))
+        verdict = engine.judge(log, self.baseline)
+        self.assertFalse(verdict["layer3"]["fired"])
+        self.assertEqual(verdict["verdict"], "attack")  # Layer 1 alone still gets this right
+
+
 class TestAggregateMetrics(unittest.TestCase):
     def test_aggregate_computes_expected_rates(self) -> None:
         """Fixed synthetic result set, independent of the real scenario library,
