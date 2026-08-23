@@ -4,9 +4,9 @@
 gullible *by construction* — it always obeys a scenario's `injected_action` if
 `hidden_instruction` is set, because that's literally what the Python code does. It has
 never had to actually be fooled, because it can't help but be fooled. A real LLM
-(qwen3.5:4b, installed locally via Ollama) genuinely deciding what to do, and genuinely
-being manipulated or not, is a different and more interesting experiment. This doc is the
-design for that — not the implementation. Foundation, not a finished feature.
+(installed locally via Ollama - see model choice below) genuinely deciding what to do, and
+genuinely being manipulated or not, is a different and more interesting experiment. This
+doc is the design for that — not the implementation. Foundation, not a finished feature.
 
 ## Why this can't just replace `agent/policy.py`
 
@@ -41,21 +41,29 @@ def run_llm_policy(
     ...
 ```
 
-Crucially: **the model's output text is never executed.** It gets parsed into a small,
-constrained set of structured tool calls, and those calls are dispatched through the exact
-same `agent/tools.py` stubs every other policy uses (`tools.read_file`, `tools.send_email`,
-`tools.delete_file`, all still CRITICAL-SAFETY-PROPERTY no-ops - see `agent/tools.py`'s own
-docstring). A model that hallucinates a tool that doesn't exist, or malformed JSON, is a
-parse failure to handle gracefully (log nothing, or log a `permission: "blocked"` step -
-schema already supports that value even though nothing uses it yet), never a crash and
-never a bypass of the stub layer.
+Crucially: **the model's output text is never executed.** Calls are dispatched through the
+exact same `agent/tools.py` stubs every other policy uses (`tools.read_file`,
+`tools.send_email`, `tools.delete_file`, all still CRITICAL-SAFETY-PROPERTY no-ops - see
+`agent/tools.py`'s own docstring). A model that hallucinates a tool that doesn't exist, or
+returns a malformed call, is a parse/validation failure to handle gracefully (log nothing,
+or log a `permission: "blocked"` step - schema already supports that value even though
+nothing uses it yet), never a crash and never a bypass of the stub layer.
+
+**Verified 2026-08-23**: checked `ollama show` on every locally installed model - all four
+(`qwen3.5:0.8b`, `qwen3.5:2b`, `qwen3.5:4b`, `qwen3-coder:30b`) declare native `tools`
+capability. That changes the plan for the better: use Ollama's structured tool-calling API
+(`tools=[...]` on the chat request, with a JSON-schema per tool matching section 1.3 of
+`docs/SCHEMA.md`) instead of prompting the model to emit JSON in prose and hand-parsing it.
+The model's tool-call response is already schema-validated by Ollama before it reaches our
+code - a parse failure becomes rare rather than the common case, and the "never execute raw
+text" property gets easier to guarantee, not harder.
 
 ## Prompt design
 
-- **System prompt**: describes the three available tools and their exact argument shapes
-  (reusing section 1.3 of `docs/SCHEMA.md` almost verbatim - the trace schema's per-tool
-  `args` shapes already are the tool contract), and instructs the model to respond with a
-  structured call (JSON) rather than prose.
+- **System prompt**: describes the task framing only ("you are an assistant with these
+  tools available; use them to complete the user's request"). The tool *shapes* themselves
+  are declared via the API's `tools` parameter, not described in prose - reduces the chance
+  the model free-forms an invalid call.
 - **User content**: the scenario's `task`, followed by the `primary_file`'s content. Nothing
   about `hidden_instruction`, `true_label`, or `injected_action` is ever included - those
   are scenario-authoring/grading concepts, invisible to the agent, same as today.
@@ -65,10 +73,23 @@ never a bypass of the stub layer.
 
 ## Which model, and why
 
-`qwen3.5:4b` — already pulled locally, small enough to iterate on quickly. `qwen3-coder:30b`
-is also available locally for a slower, more capable comparison run once the pipeline
-itself is proven out. Both run fully offline via the local Ollama server - no external API
-calls, consistent with the project's "sandboxed, no live targets" property elsewhere.
+**`qwen3.5:4b` is the primary recommendation** - already pulled locally, small enough for
+fast iteration across 9 scenarios (unlike `qwen3-coder:30b`'s 18GB, which is materially
+slower per token on non-datacenter hardware), and has both `tools` and `thinking` capability
+declared. `thinking` mode matters specifically for this project: it means the model's
+intermediate reasoning (visible via Ollama's `thinking` response field) can show *why* it
+did or didn't follow an injected instruction - itself a finding worth capturing, not just
+the final tool calls.
+
+`qwen3.5:0.8b`/`qwen3.5:2b` are worth a fast, cheap first pass (does a much smaller model
+get fooled more easily than a larger one? - a real, testable question). `qwen3-coder:30b`
+is the slower comparison run once the pipeline is proven on `4b` - has `tools` but not
+`thinking`, and is a coding-tuned model rather than a general-instruction one, so it's a
+weaker match for "does this behave like a reasonable general assistant" than for raw
+capability comparisons.
+
+All four run fully offline via the local Ollama server - no external API calls, consistent
+with the project's "sandboxed, no live targets" property elsewhere.
 
 ## What running this would actually measure
 
@@ -85,8 +106,8 @@ actually happens, not what makes the numbers look best.
 
 ## Explicitly deferred to actual implementation time
 
-- The exact JSON call-format and its parser/validator
-- Retry/repair behavior on malformed model output
+- The exact per-tool JSON-schema definitions passed to Ollama's `tools` parameter
+- Retry/repair behavior on the rare malformed/invalid tool call
 - Where LLM-driven runs get stored (separate from `scenarios/`+`results/`, since they're not
   deterministic and shouldn't be compared apples-to-apples with the batch eval numbers)
 - Whether `eval/harness.py` needs any change at all (current expectation: no - it only reads
