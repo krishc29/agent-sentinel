@@ -6,8 +6,10 @@ rule (Layer 1) or a hand-weighted score (Layer 2). build_baseline()/judge() are 
 functions with no filesystem coupling, to stay unit-testable and consistent with the
 rest of detector/; save_baseline()/load_baseline() do the JSON I/O separately.
 
-Not yet wired into detector/engine.py (see docs/LAYER3_NOTES.md for why) - use judge()
-directly against a baseline built by build_baseline.py / stored in detector/baseline.json.
+Wired into detector/engine.judge() as an optional, auxiliary field (verdict["layer3"]) -
+callers pass a baseline loaded via load_baseline(), engine.py itself stays free of
+filesystem coupling. See docs/LAYER3_NOTES.md for why it's auxiliary, not a vote: it
+under-recalls by construction (blind to step order), so it must never flip the verdict.
 """
 
 from __future__ import annotations

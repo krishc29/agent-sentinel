@@ -23,6 +23,11 @@ from run_eval import run_all_scenarios  # noqa: E402
 OUTPUT_PATH = os.path.join(HERE, "owasp_mapping.md")
 
 
+def _cell(text: str) -> str:
+    """Escape a value for safe use inside a markdown table cell."""
+    return text.replace("|", "\\|")
+
+
 def build_markdown(results) -> str:
     by_tag = defaultdict(list)
     untagged = []
@@ -54,7 +59,7 @@ def build_markdown(results) -> str:
         lines.append("|---|---|---|---|---|")
         for r in sorted(entries, key=lambda x: x["scenario_id"]):
             lines.append(
-                f"| `{r['scenario_id']}` | {r['task']} | {r['verdict']} | "
+                f"| `{r['scenario_id']}` | {_cell(r['task'])} | {r['verdict']} | "
                 f"{r['outcome']} | {r['risk_score']} |"
             )
         lines.append("")
@@ -65,7 +70,7 @@ def build_markdown(results) -> str:
         lines.append("| scenario_id | task | verdict | outcome |")
         lines.append("|---|---|---|---|")
         for r in sorted(untagged, key=lambda x: x["scenario_id"]):
-            lines.append(f"| `{r['scenario_id']}` | {r['task']} | {r['verdict']} | {r['outcome']} |")
+            lines.append(f"| `{r['scenario_id']}` | {_cell(r['task'])} | {r['verdict']} | {r['outcome']} |")
         lines.append("")
 
     return "\n".join(lines) + "\n"

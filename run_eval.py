@@ -43,9 +43,10 @@ def run_all_scenarios(scenarios_dir: str = SCENARIOS_DIR, baseline_path: str = B
 
     results = []
     for path in scenario_paths:
-        with open(path, "r", encoding="utf-8") as fh:
-            scenario = json.load(fh)
-        log = runner.run_scenario_dict(scenario)
+        # run_scenario_dict already copies owasp_tags/task from the scenario onto the
+        # action log (see agent/runner.py), so there's no need to open and parse the
+        # scenario file a second time just to read those two fields back out.
+        log = runner.run_scenario(path)
         verdict = engine.judge(log, baseline)
         result = harness.score(log, verdict)
         result.update(
@@ -53,8 +54,8 @@ def run_all_scenarios(scenarios_dir: str = SCENARIOS_DIR, baseline_path: str = B
                 "reasons": verdict["reasons"],
                 "risk_score": verdict["risk_score"],
                 "layer3": verdict["layer3"],
-                "owasp_tags": scenario["owasp_tags"],
-                "task": scenario["task"],
+                "owasp_tags": log["owasp_tags"],
+                "task": log["task"],
                 "action_log": log,
             }
         )
