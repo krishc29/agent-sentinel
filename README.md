@@ -82,17 +82,19 @@ full action log).
 
 ## Dashboard
 
+**Live:** https://krishc29.github.io/agent-sentinel/
+
 ```
-pip install -r requirements.txt
-streamlit run dashboard/app.py
+python site/generate.py
 ```
 
-`dashboard/app.py` computes everything live (same pipeline as `run_eval.py`) and offers two full
-views, toggled at the top with no page reload: **Confusion Matrix** (the 2x2 outcome grid,
-precision/recall/FPR/accuracy, a filterable scenario table) and **Watch Floor** (scenarios ranked
-by risk score, with a detail panel showing the selected scenario's action log, fired rules, and
-Layer 3 result). This is the only part of the project with a dependency beyond the standard
-library.
+`site/generate.py` bakes the live pipeline's output (same as `run_eval.py`) directly into a
+single, self-contained `site/index.html` — no server, no fetch, works standalone opened straight
+from disk. One cohesive page: headline aggregate stats, a "Three layers, one verdict" section
+that live-links to whichever scenario is selected, and a sortable/filterable scenario table that
+expands inline into the full action log, fired rules, and Layer 3 result. Pure standard library,
+like everything else in this project. `.github/workflows/deploy-pages.yml` regenerates and
+redeploys it automatically on every push to `master`.
 
 ## Key concept
 
