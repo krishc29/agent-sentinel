@@ -7,8 +7,10 @@ each through the agent, extracts features, builds a per-feature mean/stdev basel
 (detector/anomaly.py), and writes it to detector/baseline.json. Also prints three
 sanity checks: self-consistency against the same synthetic set, a held-out check
 against the real S06-S09 benign scenarios, and an exploratory check against the real
-attack scenarios (Layer 3 is not wired into the main verdict - see
-docs/LAYER3_NOTES.md - so this is informational, not a pass/fail gate).
+attack scenarios. Layer 3 is wired into detector/engine.judge() as an auxiliary,
+non-authoritative field (see docs/LAYER3_NOTES.md), so these checks stay informational
+rather than a pass/fail gate - a low Layer 3 flag rate here doesn't mean the pipeline
+is broken, since Layer 1's rules are what actually decide the verdict.
 """
 
 from __future__ import annotations
