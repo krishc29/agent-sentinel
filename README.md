@@ -1,5 +1,9 @@
 # Agent Sentinel
 
+[![Tests](https://github.com/krishc29/agent-sentinel/actions/workflows/tests.yml/badge.svg)](https://github.com/krishc29/agent-sentinel/actions/workflows/tests.yml)
+[![Deploy dashboard](https://github.com/krishc29/agent-sentinel/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/krishc29/agent-sentinel/actions/workflows/deploy-pages.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Agent Sentinel is a **defensive AI-agent security lab**. A simulated AI agent with fake tools is
 run through pre-labelled scenarios. Some scenarios are ordinary jobs; some contain a hidden
 **prompt injection** (a secret instruction buried inside a document the agent reads) that tricks
