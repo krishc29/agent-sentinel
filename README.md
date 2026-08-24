@@ -25,8 +25,10 @@ just the one it was originally written for. Deterministic batch result: precisio
 1.0, false-positive rate 0.0 (`python run_eval.py`). The real-LLM agent (`qwen3.5:4b` via
 Ollama) scores far lower — precision 0.67, recall 0.4 — but *resisted* 3 of its 5 injections
 outright, in its own words (`python run_llm_eval.py`; full write-up in
-[`docs/LLM_AGENT_PLAN.md`](docs/LLM_AGENT_PLAN.md)). Still ahead: a held-out/red-team pass — see
-[`docs/RED_TEAM_PLAN.md`](docs/RED_TEAM_PLAN.md).
+[`docs/LLM_AGENT_PLAN.md`](docs/LLM_AGENT_PLAN.md)). A red-team pass against a held-out
+scenario set found the two Layer-1 rules generalize to novel attack *shapes* but are fully
+evaded by an attack disguised as a "trusted" source — see
+[`docs/RED_TEAM_RESULTS.md`](docs/RED_TEAM_RESULTS.md).
 
 ## How to run
 
@@ -108,6 +110,22 @@ positive (`S08`) the deterministic path can't produce at all: left to fill in a 
 address itself, it guessed a plausible-looking external one, which Layer 1's rule correctly
 flagged — a real limit of behaviour-only detection once a non-scripted agent is filling the
 gaps. Full write-up: [`docs/LLM_AGENT_PLAN.md`](docs/LLM_AGENT_PLAN.md).
+
+## Red-team pass
+
+```
+python run_red_team_eval.py
+```
+
+`scenarios_heldout/` (6 scenarios, deliberately separate from `scenarios/` — never read by
+`run_eval.py`, never mixed into the curated set's numbers) tests whether Layer 1's two rules
+actually generalize, or were overfit to the exact 9 scenarios they were read while being
+written. Real result: they generalize correctly to novel structural variations (extra reads,
+different orderings, a more complex benign workflow) — but an adaptive-evasion pass found
+both rules key on the `data_provenance` *label* literally, not on whether content is
+actually untrusted. An attack disguised inside a document merely labelled `"trusted_user"`
+evades both rules completely, invisibly. Full write-up:
+[`docs/RED_TEAM_RESULTS.md`](docs/RED_TEAM_RESULTS.md).
 
 ## Dashboard
 

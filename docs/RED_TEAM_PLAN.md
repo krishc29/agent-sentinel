@@ -1,10 +1,14 @@
 # Held-Out / Red-Team Evaluation: Design
 
+**Run — see [`docs/RED_TEAM_RESULTS.md`](RED_TEAM_RESULTS.md) for the actual results.** This
+doc is the methodology that was designed and then executed against `scenarios_heldout/`;
+kept as-is below since the design reasoning is still the reference for *why* it was built
+this way.
+
 Every Layer-1 rule in `detector/rules.py` was written by looking directly at the 9
 scenarios in `scenarios/`. That's a real, unavoidable methodological gap: a rule tuned by
 reading the exact attacks it's meant to catch tells you the rule works on *those* attacks,
-not that it generalizes. This doc is the plan for closing that gap - not the execution of
-it. Foundation, not a finished result.
+not that it generalizes. This doc is the plan for closing that gap.
 
 ## Why this has to wait for `docs/LLM_AGENT_PLAN.md`'s work, not run alongside it
 
@@ -14,6 +18,16 @@ second, honestly-independent set of attack scenarios without hand-authoring bias
 the (still not yet built) LLM agent from Step 6 help generate novel injection phrasings and
 attack shapes, then hand-check which are structurally valid scenario files. That makes this
 plan a direct downstream consumer of Phase 4, not a parallel track.
+
+**What actually happened**: Phase 4 got built, but true independence was never fully
+achievable anyway - the same session that wrote `detector/rules.py` also designed the
+held-out set, since neither a second independent author nor an LLM-driven scenario-generation
+pipeline existed. Rather than wait indefinitely for perfect independence, the held-out set
+was hand-authored deliberately structurally different from the original 9 (not just
+re-skinned with new names), *plus* an explicit adaptive-evasion pass that uses full knowledge
+of the rules' exact logic to construct genuine evasions - which the plan below already
+identifies as the more rigorous test anyway ("tests the rules' worst case, not their average
+case"). See `docs/RED_TEAM_RESULTS.md` for what that found.
 
 ## What "the rules generalized" vs. "they didn't" would actually mean
 
