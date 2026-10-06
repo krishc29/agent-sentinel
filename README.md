@@ -26,8 +26,11 @@ just the one it was originally written for. Deterministic batch result: precisio
 Ollama) scores far lower — precision 0.67, recall 0.4 — but *resisted* 3 of its 5 injections
 outright, in its own words (`python run_llm_eval.py`; full write-up in
 [`docs/LLM_AGENT_PLAN.md`](docs/LLM_AGENT_PLAN.md)). A red-team pass against a held-out
-scenario set found the two Layer-1 rules generalize to novel attack *shapes* but are fully
-evaded by an attack disguised as a "trusted" source — see
+scenario set found the two Layer-1 rules generalize to novel attack *shapes* but were fully
+evaded by an attack disguised as a "trusted" source. That gap is now closed by content-based
+taint (`detector/content.py`): on a second held-out batch written and frozen *before* the fix,
+recall went from 0.0 to 0.75 with no false positives, and the one remaining miss (a paraphrased
+injection with no markers) is documented as a real ceiling — see
 [`docs/RED_TEAM_RESULTS.md`](docs/RED_TEAM_RESULTS.md).
 
 ## How to run
@@ -124,8 +127,18 @@ written. Real result: they generalize correctly to novel structural variations (
 different orderings, a more complex benign workflow) — but an adaptive-evasion pass found
 both rules key on the `data_provenance` *label* literally, not on whether content is
 actually untrusted. An attack disguised inside a document merely labelled `"trusted_user"`
-evades both rules completely, invisibly. Full write-up:
-[`docs/RED_TEAM_RESULTS.md`](docs/RED_TEAM_RESULTS.md).
+evaded both rules completely, invisibly.
+
+**Fix:** read steps now record `content_read` (what the agent actually ingested), and a read is
+tainted if its label is untrusted *or* its text carries an injection marker
+(`detector/content.py`). Tested on `scenarios_heldout2/`, a second batch committed before the
+fix and run through it once:
+
+```
+python run_red_team_eval.py scenarios_heldout2
+```
+
+Full write-up: [`docs/RED_TEAM_RESULTS.md`](docs/RED_TEAM_RESULTS.md).
 
 ## Dashboard
 
