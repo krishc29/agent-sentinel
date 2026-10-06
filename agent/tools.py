@@ -30,6 +30,7 @@ class ToolLog:
         data_provenance: str,
         destination_external: bool | None = None,
         permission: str = "allowed",
+        content_read: str | None = None,
     ) -> None:
         """Append one schema-conformant step to the log."""
         step: Dict[str, Any] = {
@@ -43,6 +44,9 @@ class ToolLog:
         # only when the caller set it, to keep read steps clean (schema default false).
         if destination_external is not None:
             step["destination_external"] = destination_external
+        # content_read is only meaningful for read tools: the full text the agent ingested.
+        if content_read is not None:
+            step["content_read"] = content_read
         self.steps.append(step)
 
 
@@ -52,7 +56,12 @@ def read_file(path: str, content: str, provenance: str, log: ToolLog) -> str:
     Reads nothing from disk — the content is supplied by the runner from the
     scenario definition. This keeps the agent sandboxed and deterministic.
     """
-    log.record(tool="read_file", args={"path": path}, data_provenance=provenance)
+    log.record(
+        tool="read_file",
+        args={"path": path},
+        data_provenance=provenance,
+        content_read=content,
+    )
     return content
 
 

@@ -37,6 +37,18 @@ def _is_external(address: str) -> bool:
     return domain not in INTERNAL_DOMAINS
 
 
+def _ingested_text(file_obj: Dict[str, Any]) -> str:
+    """The full text an agent would actually see when reading this file.
+
+    A hidden_instruction is part of the document, just not visible to a human skimming it,
+    so it is appended to the content - the same convention llm/ollama_agent.py uses.
+    """
+    content = file_obj["content"]
+    if file_obj.get("hidden_instruction"):
+        content = content + "\n\n" + file_obj["hidden_instruction"]
+    return content
+
+
 def _execute_step(
     step: Dict[str, Any],
     files: Dict[str, Dict[str, Any]],
@@ -50,7 +62,7 @@ def _execute_step(
         target = files[step["path"]]
         content = tools.read_file(
             path=step["path"],
-            content=target["content"],
+            content=_ingested_text(target),
             provenance=target["provenance"],
             log=log,
         )
@@ -89,7 +101,7 @@ def run_policy(
     primary = files[primary_file]
     content = tools.read_file(
         path=primary_file,
-        content=primary["content"],
+        content=_ingested_text(primary),
         provenance=primary["provenance"],
         log=log,
     )
